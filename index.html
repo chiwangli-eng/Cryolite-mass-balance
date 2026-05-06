@@ -291,18 +291,25 @@
                             <text x="-130" y="35" font-size="12" font-weight="bold" fill="#475569" text-anchor="middle">Recycle (QR)</text>
                             <foreignObject x="-285" y="65" width="160" height="80">
                                 <div xmlns="http://www.w3.org/1999/xhtml">
-                                    <div class="bg-white/95 border border-slate-300 rounded-lg p-2.5 shadow-sm">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <label class="text-[10px] font-bold text-slate-600 uppercase">Recycle (QR)</label>
+                                    <div class="bg-white/95 border border-indigo-200 rounded-2xl p-2.5 shadow-lg shadow-indigo-500/10">
+                                        <div class="flex justify-between items-center mb-1.5">
+                                            <label class="text-[10px] font-extrabold text-indigo-600 uppercase tracking-wider">Recycle (QR)</label>
                                             <div class="flex items-baseline gap-1">
-                                                <input type="number" id="num_qr" value="500" min="0" max="1000" class="w-12 bg-transparent text-xs font-black text-slate-800 focus:outline-none border-b border-slate-100 focus:border-slate-500 transition-colors text-right" />
-                                                <span class="text-[8px] font-medium text-slate-400 uppercase">CMD</span>
+                                                <input type="number" id="num_qr" value="500" min="0" max="1000" class="w-12 bg-transparent text-xs font-black text-slate-800 focus:outline-none border-b border-indigo-100 focus:border-indigo-500 transition-colors text-right" />
+                                                <span class="text-[9px] font-bold text-slate-400 uppercase">CMD</span>
                                             </div>
                                         </div>
-                                        <input type="range" id="input_qr" min="0" max="1000" value="500" step="1" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-600" />
+                                        <input type="range" id="input_qr" min="0" max="1000" value="500" step="1" class="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                                     </div>
                                 </div>
                             </foreignObject>
+                            <!-- Recycle Ratio Display -->
+                            <g transform="translate(-270, 195)">
+                                <rect x="0" y="-12" width="130" height="24" rx="12" fill="#6366f1" fill-opacity="0.1" stroke="#6366f1" stroke-width="1.5" filter="url(#bubbleGlow)" />
+                                <text x="65" y="5" font-size="12" font-weight="800" text-anchor="middle" fill="#4f46e5">
+                                    QR/Q: <tspan id="svg_recycle_ratio">0.25</tspan>
+                                </text>
+                            </g>
                         </g>
 
                         <!-- Wastage Stream (Qw) -->
@@ -311,15 +318,15 @@
                             <text x="75" y="35" font-size="12" font-weight="bold" fill="#1e293b" text-anchor="middle">Wastage (Qw)</text>
                             <foreignObject x="155" y="50" width="160" height="80">
                                 <div xmlns="http://www.w3.org/1999/xhtml">
-                                    <div class="bg-white/95 border border-slate-300 rounded-lg p-2.5 shadow-sm">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <label class="text-[10px] font-bold text-slate-600 uppercase">Waste (Qw)</label>
+                                    <div class="bg-white/95 border border-amber-200 rounded-2xl p-2.5 shadow-lg shadow-amber-500/10">
+                                        <div class="flex justify-between items-center mb-1.5">
+                                            <label class="text-[10px] font-extrabold text-amber-600 uppercase tracking-wider">Waste (Qw)</label>
                                             <div class="flex items-baseline gap-1">
-                                                <input type="number" id="num_qw" value="20" min="0" max="100" step="0.5" class="w-12 bg-transparent text-xs font-black text-slate-800 focus:outline-none border-b border-slate-100 focus:border-slate-500 transition-colors text-right" />
-                                                <span class="text-[8px] font-medium text-slate-400 uppercase">CMD</span>
+                                                <input type="number" id="num_qw" value="20" min="0" max="100" step="0.5" class="w-12 bg-transparent text-xs font-black text-slate-800 focus:outline-none border-b border-amber-100 focus:border-amber-500 transition-colors text-right" />
+                                                <span class="text-[9px] font-bold text-slate-400 uppercase">CMD</span>
                                             </div>
                                         </div>
-                                        <input type="range" id="input_qw" min="0" max="100" value="20" step="0.5" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-600" />
+                                        <input type="range" id="input_qw" min="0" max="100" value="20" step="0.5" class="w-full h-2 bg-amber-100 rounded-lg appearance-none cursor-pointer accent-amber-600" />
                                     </div>
                                 </div>
                             </foreignObject>
@@ -390,7 +397,8 @@
             sludge_level_pct: document.getElementById('sludge_level_pct'),
             res_qout: document.getElementById('res_qout'),
             res_fremoved: document.getElementById('res_fremoved'),
-            res_cryolite: document.getElementById('res_cryolite')
+            res_cryolite: document.getElementById('res_cryolite'),
+            svg_recycle_ratio: document.getElementById('svg_recycle_ratio')
         };
 
         function calculate(sourceId) {
@@ -428,6 +436,10 @@
 
             if (elements.svg_qeff) elements.svg_qeff.textContent = Qeff.toLocaleString();
             if (elements.svg_solid_percent) elements.svg_solid_percent.textContent = sludgeSolidPercent.toFixed(2);
+
+            // Recycle Ratio (QR / Q)
+            const recycleRatio = Q > 0 ? (QR / Q) : 0;
+            if (elements.svg_recycle_ratio) elements.svg_recycle_ratio.textContent = recycleRatio.toFixed(2);
             
             // --- Sludge Warning with severity-based flashing ---
             const warningClasses = ['warning-mild', 'warning-moderate', 'warning-severe', 'warning-critical', 'warning-flash'];
