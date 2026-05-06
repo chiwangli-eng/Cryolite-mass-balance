@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryolite Solid Balance - V2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #f8fafc, #f1f5f9);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        @keyframes flowGlow {
+            0% { filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5)); }
+            50% { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8)); }
+            100% { filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5)); }
+        }
+
+        .flow-glow {
+            animation: flowGlow 2s infinite ease-in-out;
+        }
+
+        .tank-depth {
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+        }
+
+        @keyframes flashWarning {
+            0% { fill-opacity: 0.1; stroke-width: 2; }
+            50% { fill-opacity: 0.8; fill: #ef4444; stroke: #b91c1c; stroke-width: 4; }
+            100% { fill-opacity: 0.1; stroke-width: 2; }
+        }
+
+        .warning-flash {
+            animation: flashWarning 0.8s infinite;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen py-10 px-6">
+    <!-- Decorative background elements -->
+    <div class="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10">
+        <div class="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/30 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-100/30 rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="glass-card rounded-3xl p-10 mb-10 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500"></div>
+            <h1 class="text-5xl font-extrabold text-slate-900 tracking-tight mb-3 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                Cryolite Solid Balance
+            </h1>
+            <p class="text-slate-500 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
+                Precision Process Modeling & Mass Balance Visualization
+            </p>
+        </header>
+
+        <!-- Main Diagram Area -->
+        <div class="glass-card rounded-3xl p-10 overflow-hidden relative shadow-2xl shadow-blue-900/5">
+            <div class="w-full flex justify-center">
+                <svg viewBox="0 0 1000 800" class="w-full h-auto max-w-6xl" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="gradReactor" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffffff" />
+                            <stop offset="100%" stop-color="#f1f5f9" />
+                        </linearGradient>
+                        <linearGradient id="gradFilter" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#f8fafc" />
+                            <stop offset="100%" stop-color="#cbd5e1" />
+                        </linearGradient>
+                        <linearGradient id="gradWater" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#2563eb" />
+                            <stop offset="100%" stop-color="#60a5fa" />
+                        </linearGradient>
+                        <filter id="bubbleGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                        <linearGradient id="gradSludge" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#94a3b8" stop-opacity="0.4" />
+                            <stop offset="100%" stop-color="#0f172a" stop-opacity="1" />
+                        </linearGradient>
+                        <marker id="arrowHead" markerWidth="15" markerHeight="15" refX="14" refY="7.5" orient="auto" markerUnits="userSpaceOnUse">
+                            <path d="M 0 0 L 15 7.5 L 0 15 z" fill="#64748b" />
+                        </marker>
+                        <marker id="arrowBlue" markerWidth="20" markerHeight="20" refX="19" refY="10" orient="auto" markerUnits="userSpaceOnUse">
+                            <path d="M 0 0 L 20 10 L 0 20 z" fill="#2563eb" />
+                        </marker>
+                        <marker id="arrowSolid" markerWidth="15" markerHeight="15" refX="14" refY="7.5" orient="auto" markerUnits="userSpaceOnUse">
+                            <path d="M 0 0 L 15 7.5 L 0 15 z" fill="#475569" />
+                        </marker>
+                    </defs>
+
+                    <!-- Influent Flow -->
+                    <g transform="translate(0, 300)">
+                        <path id="path_in" d="M 20 0 L 230 0" stroke="#2563eb" stroke-width="6" fill="none" stroke-dasharray="10 5" marker-end="url(#arrowBlue)">
+                            <animate attributeName="stroke-dashoffset" from="15" to="0" dur="0.8s" repeatCount="indefinite" />
+                        </path>
+                        <text x="20" y="-120" font-size="14" font-weight="800" fill="#1d4ed8" letter-spacing="1">INFLUENT STREAM</text>
+                        
+                        <!-- Flow (Q) Panel - Above -->
+                        <foreignObject x="10" y="-110" width="200" height="90">
+                            <div xmlns="http://www.w3.org/1999/xhtml">
+                                <div class="bg-white/95 border border-blue-200 rounded-2xl p-3 shadow-lg shadow-blue-500/5">
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <label class="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider">Flow (Q)</label>
+                                        <div class="flex items-baseline gap-1">
+                                            <input type="number" id="num_q" value="2000" min="1000" max="3000" class="w-16 bg-transparent text-sm font-black text-slate-800 focus:outline-none border-b border-blue-100 focus:border-blue-500 transition-colors text-right" />
+                                            <span class="text-[9px] font-bold text-slate-400 uppercase">CMD</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="input_q" min="1000" max="3000" value="2000" step="10" class="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                </div>
+                            </div>
+                        </foreignObject>
+
+                        <!-- Fluoride (Fin) Panel - Below -->
+                        <foreignObject x="10" y="20" width="200" height="90">
+                            <div xmlns="http://www.w3.org/1999/xhtml">
+                                <div class="bg-white/95 border border-blue-200 rounded-2xl p-3 shadow-lg shadow-blue-500/5">
+                                    <div class="flex justify-between items-center mb-1.5">
+                                        <label class="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider">Fluoride (Fin)</label>
+                                        <div class="flex items-baseline gap-1">
+                                            <input type="number" id="num_fin" value="1000" min="300" max="2000" class="w-16 bg-transparent text-sm font-black text-slate-800 focus:outline-none border-b border-blue-100 focus:border-blue-500 transition-colors text-right" />
+                                            <span class="text-[9px] font-bold text-slate-400 uppercase">mg/L</span>
+                                        </div>
+                                    </div>
+                                    <input type="range" id="input_fin" min="300" max="2000" value="1000" step="10" class="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600" />
+                                </div>
+                            </div>
+                        </foreignObject>
+                    </g>
+
+                    <!-- Crystallization Reactor -->
+                    <g transform="translate(250, 200)">
+                        <rect x="0" y="0" width="220" height="200" rx="12" fill="url(#gradReactor)" stroke="#334155" stroke-width="3" />
+                        <text x="110" y="-20" font-size="16" font-weight="bold" text-anchor="middle" fill="#0f172a">Crystallization Reactor</text>
+                        
+                        <!-- Reactor Solid Content Display -->
+                        <g transform="translate(110, -55)">
+                            <rect id="bg_reactor_solid" x="-85" y="-15" width="170" height="30" rx="15" fill="#3b82f6" fill-opacity="0.15" stroke="#3b82f6" stroke-width="2" filter="url(#bubbleGlow)" />
+                            <text x="0" y="6" font-size="14" font-weight="800" text-anchor="middle" fill="#1d4ed8">
+                                Solid: <tspan id="svg_reactor_percent">0.15</tspan>%
+                            </text>
+                            <!-- Hidden SS value to keep JS working -->
+                            <tspan id="svg_reactor_ss" display="none">1.5</tspan>
+                        </g>
+
+                        <!-- Mixer Animation -->
+                        <g transform="translate(110, 100)">
+                            <line x1="0" y1="-80" x2="0" y2="70" stroke="#94a3b8" stroke-width="4" />
+                            <g>
+                                <rect x="-30" y="60" width="60" height="10" rx="2" fill="#475569" />
+                                <animateTransform attributeName="transform" type="rotate" from="0 0 65" to="360 0 65" dur="3s" repeatCount="indefinite" />
+                            </g>
+                            <rect x="-15" y="-100" width="30" height="40" rx="4" fill="#334155" />
+                        </g>
+                    </g>
+
+                    <!-- Transfer -->
+                    <g transform="translate(470, 300)" class="flow-glow">
+                        <path d="M 0 0 L 80 0" stroke="#64748b" stroke-width="5" fill="none" marker-end="url(#arrowHead)" />
+                    </g>
+
+                    <!-- Sedimentation -->
+                    <g transform="translate(550, 200)">
+                        <path d="M 0 0 L 260 0 L 260 150 L 130 200 L 0 150 Z" fill="url(#gradReactor)" stroke="#334155" stroke-width="3" />
+                        <!-- Sludge Layer -->
+                        <path id="tank_sludge" d="M 0 130 L 260 130 L 260 150 L 130 200 L 0 150 Z" fill="url(#gradSludge)" stroke="none" pointer-events="none" />
+                        
+                        <!-- Animated Sludge Particles -->
+                        <g id="sludge_particles" pointer-events="none">
+                            <circle cx="50" cy="140" r="2" fill="#475569">
+                                <animate attributeName="cy" from="130" to="160" dur="2s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="210" cy="140" r="2" fill="#475569">
+                                <animate attributeName="cy" from="130" to="160" dur="2.5s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0;1;0" dur="2.5s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="130" cy="160" r="3" fill="#334155">
+                                <animate attributeName="cy" from="150" to="190" dur="3s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="100" cy="170" r="2" fill="#1e293b">
+                                <animate attributeName="cy" from="140" to="180" dur="1.8s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" />
+                            </circle>
+                            <circle cx="160" cy="170" r="2" fill="#1e293b">
+                                <animate attributeName="cy" from="145" to="185" dur="2.2s" repeatCount="indefinite" />
+                                <animate attributeName="opacity" values="0;1;0" dur="2.2s" repeatCount="indefinite" />
+                            </circle>
+                        </g>
+                        <text x="130" y="-20" font-size="16" font-weight="bold" text-anchor="middle" fill="#0f172a">Sedimentation Tank</text>
+                    </g>
+
+                    <!-- Effluent -->
+                    <g transform="translate(810, 230)" class="flow-glow">
+                        <path d="M 0 0 L 150 0" stroke="#10b981" stroke-width="8" fill="none" stroke-dasharray="12 6" marker-end="url(#arrowHead)">
+                            <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.2s" repeatCount="indefinite" />
+                        </path>
+                        <text x="20" y="-135" font-size="14" font-weight="800" fill="#059669" letter-spacing="1">EFFLUENT STREAM</text>
+                        <foreignObject x="20" y="-125" width="140" height="75">
+                            <div xmlns="http://www.w3.org/1999/xhtml">
+                                <div class="bg-white/95 border border-emerald-200 rounded-2xl p-3 shadow-lg shadow-emerald-500/5">
+                                    <label class="block text-[10px] font-extrabold text-emerald-600 uppercase mb-1.5 tracking-wider">Fluoride (Feff)</label>
+                                    <div class="flex items-center gap-1">
+                                        <input type="number" id="input_feff" value="100" class="w-full bg-transparent text-sm font-black text-slate-800 focus:outline-none border-b-2 border-emerald-100 focus:border-emerald-500 transition-colors" />
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase">mg/L</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </foreignObject>
+                        <!-- Qeff Display Bubble -->
+                        <g transform="translate(20, 35)">
+                            <rect x="0" y="-12" width="130" height="24" rx="12" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-width="1.5" filter="url(#bubbleGlow)" />
+                            <text x="65" y="5" font-size="12" font-weight="800" text-anchor="middle" fill="#059669">
+                                Qeff: <tspan id="svg_qeff">1995</tspan> CMD
+                            </text>
+                        </g>
+                    </g>
+
+                    <!-- Sludge & Recycle -->
+                    <g transform="translate(680, 400)">
+                        <path d="M 0 0 L 0 50" stroke="#475569" stroke-width="8" fill="none" />
+                        
+                        <!-- Recycle Stream (QR) -->
+                        <g>
+                            <path d="M 0 50 L -260 50 L -260 -50" stroke="#475569" stroke-width="5" fill="none" stroke-dasharray="8 4" marker-end="url(#arrowSolid)">
+                                <animate attributeName="stroke-dashoffset" from="12" to="0" dur="2s" repeatCount="indefinite" />
+                            </path>
+                            <text x="-130" y="35" font-size="12" font-weight="bold" fill="#475569" text-anchor="middle">Recycle (QR)</text>
+                            <foreignObject x="-285" y="65" width="160" height="80">
+                                <div xmlns="http://www.w3.org/1999/xhtml">
+                                    <div class="bg-white/95 border border-slate-300 rounded-lg p-2.5 shadow-sm">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="text-[10px] font-bold text-slate-600 uppercase">Recycle (QR)</label>
+                                            <div class="flex items-baseline gap-1">
+                                                <input type="number" id="num_qr" value="500" min="0" max="1000" class="w-12 bg-transparent text-xs font-black text-slate-800 focus:outline-none border-b border-slate-100 focus:border-slate-500 transition-colors text-right" />
+                                                <span class="text-[8px] font-medium text-slate-400 uppercase">CMD</span>
+                                            </div>
+                                        </div>
+                                        <input type="range" id="input_qr" min="0" max="1000" value="500" step="1" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-600" />
+                                    </div>
+                                </div>
+                            </foreignObject>
+                        </g>
+
+                        <!-- Wastage Stream (Qw) -->
+                        <g>
+                            <path d="M 0 50 L 150 50 L 150 220" stroke="#475569" stroke-width="5" fill="none" marker-end="url(#arrowSolid)" />
+                            <text x="75" y="35" font-size="12" font-weight="bold" fill="#1e293b" text-anchor="middle">Wastage (Qw)</text>
+                            <foreignObject x="155" y="50" width="160" height="80">
+                                <div xmlns="http://www.w3.org/1999/xhtml">
+                                    <div class="bg-white/95 border border-slate-300 rounded-lg p-2.5 shadow-sm">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="text-[10px] font-bold text-slate-600 uppercase">Waste (Qw)</label>
+                                            <div class="flex items-baseline gap-1">
+                                                <input type="number" id="num_qw" value="20" min="0" max="100" step="0.5" class="w-12 bg-transparent text-xs font-black text-slate-800 focus:outline-none border-b border-slate-100 focus:border-slate-500 transition-colors text-right" />
+                                                <span class="text-[8px] font-medium text-slate-400 uppercase">CMD</span>
+                                            </div>
+                                        </div>
+                                        <input type="range" id="input_qw" min="0" max="100" value="20" step="0.5" class="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-slate-600" />
+                                    </div>
+                                </div>
+                            </foreignObject>
+                        </g>
+
+                        <!-- Sludge Quality Display -->
+                        <g transform="translate(0, 100)">
+                            <rect id="bg_sludge_solid" x="-100" y="-20" width="200" height="40" rx="20" fill="#4f46e5" fill-opacity="0.1" stroke="#4f46e5" stroke-width="2" filter="url(#bubbleGlow)" />
+                            <text x="0" y="7" font-size="15" font-weight="800" text-anchor="middle" fill="#4338ca">
+                                Solids: <tspan id="svg_solid_percent">3.3</tspan>%
+                            </text>
+                        </g>
+                    </g>
+
+                    <!-- Filter Press -->
+                    <g transform="translate(750, 620)">
+                        <rect x="0" y="0" width="180" height="80" rx="8" fill="url(#gradFilter)" stroke="#334155" stroke-width="2" />
+                        <text x="90" y="105" font-size="14" font-weight="bold" text-anchor="middle" fill="#0f172a">Filter Press</text>
+                        <g stroke="#cbd5e1" stroke-width="1">
+                            <line x1="30" y1="10" x2="30" y2="70" /><line x1="60" y1="10" x2="60" y2="70" /><line x1="90" y1="10" x2="90" y2="70" /><line x1="120" y1="10" x2="120" y2="70" /><line x1="150" y1="10" x2="150" y2="70" />
+                        </g>
+                    </g>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-blue-500">
+                <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider block">Total Flow Out</span>
+                <span id="res_qout" class="text-3xl font-bold text-slate-900">2000</span> CMD
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-amber-500">
+                <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider block">F Removed</span>
+                <span id="res_fremoved" class="text-3xl font-bold text-slate-900">90</span> kg/day
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg border-l-4 border-emerald-500">
+                <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider block">Cryolite Produced</span>
+                <span id="res_cryolite" class="text-3xl font-bold text-slate-900">165.7</span> kg/day
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const inputs = ['input_q', 'input_fin', 'input_feff', 'input_qr', 'input_qw'];
+        const elements = {
+            qin: document.getElementById('input_q'),
+            fin: document.getElementById('input_fin'),
+            feff: document.getElementById('input_feff'),
+            qr: document.getElementById('input_qr'),
+            qw: document.getElementById('input_qw'),
+            
+            num_q: document.getElementById('num_q'),
+            num_fin: document.getElementById('num_fin'),
+            num_qr: document.getElementById('num_qr'),
+            num_qw: document.getElementById('num_qw'),
+            
+            svg_qeff: document.getElementById('svg_qeff'),
+            svg_solid_percent: document.getElementById('svg_solid_percent'),
+            svg_reactor_ss: document.getElementById('svg_reactor_ss'),
+            svg_reactor_percent: document.getElementById('svg_reactor_percent'),
+            bg_reactor_solid: document.getElementById('bg_reactor_solid'),
+            bg_sludge_solid: document.getElementById('bg_sludge_solid'),
+            tank_sludge: document.getElementById('tank_sludge'),
+            sludge_particles: document.getElementById('sludge_particles'),
+            res_qout: document.getElementById('res_qout'),
+            res_fremoved: document.getElementById('res_fremoved'),
+            res_cryolite: document.getElementById('res_cryolite')
+        };
+
+        function calculate(sourceId) {
+            const Q = sourceId === 'num_q' ? parseFloat(elements.num_q.value) : parseFloat(elements.qin.value);
+            const Fin = sourceId === 'num_fin' ? parseFloat(elements.num_fin.value) : parseFloat(elements.fin.value);
+            const Feff = parseFloat(elements.feff.value) || 0;
+            const QR = sourceId === 'num_qr' ? parseFloat(elements.num_qr.value) : parseFloat(elements.qr.value);
+            const QW = sourceId === 'num_qw' ? parseFloat(elements.num_qw.value) : parseFloat(elements.qw.value);
+
+            // Sync Sliders and Number Inputs
+            if (sourceId === 'num_q') elements.qin.value = Q;
+            else elements.num_q.value = Q;
+            
+            if (sourceId === 'num_fin') elements.fin.value = Fin;
+            else elements.num_fin.value = Fin;
+            
+            if (sourceId === 'num_qr') elements.qr.value = QR;
+            else elements.num_qr.value = QR;
+            
+            if (sourceId === 'num_qw') elements.qw.value = QW;
+            else elements.num_qw.value = QW;
+
+            const Qeff = Q - QW;
+            const deltaF = Math.max(0, Fin - Feff);
+            const massFRemoved = (Q * deltaF) / 1000;
+            const cryoliteProduced = massFRemoved * 1.8417;
+
+            let sludgeSolidPercent = 0;
+            let reactorSS = 0;
+            
+            if (QW > 0) {
+                sludgeSolidPercent = (cryoliteProduced / QW) / 10;
+                reactorSS = (cryoliteProduced * (1 + QR / QW)) / (Q + QR);
+            }
+
+            if (elements.svg_qeff) elements.svg_qeff.textContent = Qeff.toLocaleString();
+            if (elements.svg_solid_percent) elements.svg_solid_percent.textContent = sludgeSolidPercent.toFixed(2);
+            
+            // Sludge Warning (threshold: 25%)
+            if (sludgeSolidPercent > 25) elements.bg_sludge_solid.classList.add('warning-flash');
+            else elements.bg_sludge_solid.classList.remove('warning-flash');
+
+            // Dynamic Sludge Opacity
+            const sludgeOpacity = Math.min(0.9, 0.2 + (sludgeSolidPercent / 50));
+            if (elements.tank_sludge) elements.tank_sludge.style.fillOpacity = sludgeOpacity;
+            if (elements.sludge_particles) elements.sludge_particles.style.opacity = Math.min(1, 0.3 + (sludgeSolidPercent / 40));
+
+            if (elements.svg_reactor_ss) elements.svg_reactor_ss.textContent = reactorSS.toFixed(2);
+            const reactorPercent = reactorSS / 10;
+            if (elements.svg_reactor_percent) elements.svg_reactor_percent.textContent = reactorPercent.toFixed(2);
+
+            // Reactor Warning (threshold: 20%)
+            if (reactorPercent > 20) elements.bg_reactor_solid.classList.add('warning-flash');
+            else elements.bg_reactor_solid.classList.remove('warning-flash');
+            if (elements.res_qout) elements.res_qout.textContent = (Qeff + QW).toLocaleString();
+            if (elements.res_fremoved) elements.res_fremoved.textContent = massFRemoved.toFixed(1);
+            if (elements.res_cryolite) elements.res_cryolite.textContent = cryoliteProduced.toFixed(1);
+        }
+
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', (e) => calculate(id));
+        });
+
+        ['num_q', 'num_fin', 'num_qr', 'num_qw'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', (e) => calculate(id));
+        });
+        calculate();
+    </script>
+</body>
+</html>
