@@ -35,14 +35,44 @@
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
         }
 
-        @keyframes flashWarning {
+        @keyframes flashMild {
+            0% { fill-opacity: 0.1; stroke-width: 2; }
+            50% { fill-opacity: 0.5; fill: #f59e0b; stroke: #d97706; stroke-width: 3; }
+            100% { fill-opacity: 0.1; stroke-width: 2; }
+        }
+        @keyframes flashModerate {
+            0% { fill-opacity: 0.1; stroke-width: 2; }
+            50% { fill-opacity: 0.65; fill: #f97316; stroke: #ea580c; stroke-width: 3.5; }
+            100% { fill-opacity: 0.1; stroke-width: 2; }
+        }
+        @keyframes flashSevere {
             0% { fill-opacity: 0.1; stroke-width: 2; }
             50% { fill-opacity: 0.8; fill: #ef4444; stroke: #b91c1c; stroke-width: 4; }
             100% { fill-opacity: 0.1; stroke-width: 2; }
         }
+        @keyframes flashCritical {
+            0% { fill-opacity: 0.1; stroke-width: 2; }
+            50% { fill-opacity: 1; fill: #dc2626; stroke: #991b1b; stroke-width: 5; }
+            100% { fill-opacity: 0.1; stroke-width: 2; }
+        }
+
+        .warning-mild     { animation: flashMild 1.5s infinite; }
+        .warning-moderate  { animation: flashModerate 1.0s infinite; }
+        .warning-severe    { animation: flashSevere 0.6s infinite; }
+        .warning-critical  { animation: flashCritical 0.35s infinite; }
 
         .warning-flash {
-            animation: flashWarning 0.8s infinite;
+            animation: flashSevere 0.8s infinite;
+        }
+
+        @keyframes sludgeRise {
+            from { transform: translateY(0); }
+            to   { transform: translateY(var(--sludge-offset, 0px)); }
+        }
+
+        .sludge-level-text {
+            font-family: 'Outfit', sans-serif;
+            transition: opacity 0.5s ease;
         }
     </style>
 </head>
@@ -175,9 +205,27 @@
 
                     <!-- Sedimentation -->
                     <g transform="translate(550, 200)">
+                        <!-- Tank outline (clip to contain sludge) -->
+                        <clipPath id="tankClip">
+                            <path d="M 0 0 L 260 0 L 260 150 L 130 200 L 0 150 Z" />
+                        </clipPath>
                         <path d="M 0 0 L 260 0 L 260 150 L 130 200 L 0 150 Z" fill="url(#gradReactor)" stroke="#334155" stroke-width="3" />
-                        <!-- Sludge Layer -->
-                        <path id="tank_sludge" d="M 0 130 L 260 130 L 260 150 L 130 200 L 0 150 Z" fill="url(#gradSludge)" stroke="none" pointer-events="none" />
+                        
+                        <!-- Sludge Layer (dynamic height) -->
+                        <g clip-path="url(#tankClip)">
+                            <rect id="tank_sludge" x="0" y="130" width="260" height="80" fill="url(#gradSludge)" pointer-events="none" style="transition: y 1.2s ease-in-out, height 1.2s ease-in-out;" />
+                        </g>
+
+                        <!-- Sludge Level Line Indicator -->
+                        <line id="sludge_level_line" x1="5" y1="130" x2="255" y2="130" stroke="#ef4444" stroke-width="2" stroke-dasharray="6 3" opacity="0" style="transition: y1 1.2s ease-in-out, y2 1.2s ease-in-out, opacity 0.5s ease;" />
+                        
+                        <!-- Sludge Level Label -->
+                        <g id="sludge_level_label" transform="translate(265, 130)" style="transition: transform 1.2s ease-in-out;" opacity="0">
+                            <rect x="0" y="-10" width="78" height="20" rx="10" fill="#ef4444" fill-opacity="0.15" stroke="#ef4444" stroke-width="1" />
+                            <text x="39" y="5" font-size="10" font-weight="800" text-anchor="middle" fill="#dc2626" class="sludge-level-text">
+                                ▲ <tspan id="sludge_level_pct">0</tspan>% Rise
+                            </text>
+                        </g>
                         
                         <!-- Animated Sludge Particles -->
                         <g id="sludge_particles" pointer-events="none">
@@ -337,6 +385,9 @@
             bg_sludge_solid: document.getElementById('bg_sludge_solid'),
             tank_sludge: document.getElementById('tank_sludge'),
             sludge_particles: document.getElementById('sludge_particles'),
+            sludge_level_line: document.getElementById('sludge_level_line'),
+            sludge_level_label: document.getElementById('sludge_level_label'),
+            sludge_level_pct: document.getElementById('sludge_level_pct'),
             res_qout: document.getElementById('res_qout'),
             res_fremoved: document.getElementById('res_fremoved'),
             res_cryolite: document.getElementById('res_cryolite')
@@ -378,9 +429,54 @@
             if (elements.svg_qeff) elements.svg_qeff.textContent = Qeff.toLocaleString();
             if (elements.svg_solid_percent) elements.svg_solid_percent.textContent = sludgeSolidPercent.toFixed(2);
             
-            // Sludge Warning (threshold: 25%)
-            if (sludgeSolidPercent > 25) elements.bg_sludge_solid.classList.add('warning-flash');
-            else elements.bg_sludge_solid.classList.remove('warning-flash');
+            // --- Sludge Warning with severity-based flashing ---
+            const warningClasses = ['warning-mild', 'warning-moderate', 'warning-severe', 'warning-critical', 'warning-flash'];
+            const excess = sludgeSolidPercent - 25;
+
+            // Remove all existing warning classes
+            warningClasses.forEach(cls => elements.bg_sludge_solid.classList.remove(cls));
+
+            if (excess > 0) {
+                // Severity tiers: 0-5% mild, 5-15% moderate, 15-30% severe, >30% critical
+                if (excess <= 5) {
+                    elements.bg_sludge_solid.classList.add('warning-mild');
+                } else if (excess <= 15) {
+                    elements.bg_sludge_solid.classList.add('warning-moderate');
+                } else if (excess <= 30) {
+                    elements.bg_sludge_solid.classList.add('warning-severe');
+                } else {
+                    elements.bg_sludge_solid.classList.add('warning-critical');
+                }
+            }
+
+            // --- Dynamic Sludge Level Rise in Tank ---
+            // Normal sludge level Y = 130, can rise up to Y = 30 (top of tank)
+            // excessRatio: 0 at <=25%, 1.0 at >=55% (max rise)
+            const excessRatio = Math.min(1, Math.max(0, excess / 30));
+            const normalY = 130;
+            const minY = 30;  // top of tank
+            const newY = normalY - (normalY - minY) * excessRatio;
+            const newHeight = 200 - newY; // bottom of tank shape ~200
+
+            if (elements.tank_sludge) {
+                elements.tank_sludge.setAttribute('y', newY.toFixed(1));
+                elements.tank_sludge.setAttribute('height', newHeight.toFixed(1));
+            }
+
+            // Sludge level line and label
+            if (elements.sludge_level_line) {
+                elements.sludge_level_line.setAttribute('y1', newY.toFixed(1));
+                elements.sludge_level_line.setAttribute('y2', newY.toFixed(1));
+                elements.sludge_level_line.style.opacity = excess > 0 ? '1' : '0';
+            }
+            if (elements.sludge_level_label) {
+                elements.sludge_level_label.setAttribute('transform', `translate(265, ${newY.toFixed(1)})`);
+                elements.sludge_level_label.style.opacity = excess > 0 ? '1' : '0';
+            }
+            if (elements.sludge_level_pct) {
+                const risePct = (excessRatio * 100).toFixed(0);
+                elements.sludge_level_pct.textContent = risePct;
+            }
 
             // Dynamic Sludge Opacity
             const sludgeOpacity = Math.min(0.9, 0.2 + (sludgeSolidPercent / 50));
